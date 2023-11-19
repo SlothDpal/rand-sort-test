@@ -58,7 +58,6 @@ void setup() {
             }
         } while (!isSorted(startData,dataLen));
         end=millis();
-        start=millis();
         delta_us = end-start;
         if (delta_us<min_t) min_t=delta_us;
         if (delta_us>max_t) max_t=delta_us;

@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-#ifdef ESP32
+#if (defined(ESP32) || defined(ESP8266))
 void SerialPrintf (const char * format, ...)
 {
   char *printfbuff;

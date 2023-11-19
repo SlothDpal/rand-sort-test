@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <stdarg.h>
 
 #if (defined(ESP32) || defined(ESP8266))
 void SerialPrintf (const char * format, ...)
@@ -22,3 +23,4 @@ void SerialPrintf (const char * format, ...)
   Serial.print(printfbuff);
 }
 #endif
+

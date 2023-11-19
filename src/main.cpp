@@ -37,13 +37,14 @@ void setup() {
     unsigned long delta_us,iter=0,avg_iter=0,min_t=-1,max_t=0,avg_t=0;
     unsigned seed=43434,count=0,max_count=10;
     pinMode(LED_BUILTIN,OUTPUT); 
+    digitalWrite(LED_BUILTIN,true);
     #if (defined(ESP32)||defined(ESP8266))
         Serial.begin(74800);
-    #else   
+    #else
         Serial.begin(9600);
     #endif
     delay(5000);
-    Serial.println("");
+    SerialPrintf("\n");
     SerialPrintf("Seed: %u\n",seed);
     srand(seed);
     shuffleArray(data,dataLen);

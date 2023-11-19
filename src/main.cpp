@@ -33,28 +33,32 @@ void setup() {
     unsigned seed=43434,count=0,max_count=10;
     Serial.begin(9600);
     srand(seed);
-    
+    pinMode(LED_BUILTIN,OUTPUT);    
     shuffleArray(data,dataLen);
-    SerialPrintf ("Стартовая последовательность: ");
+    SerialPrintf ("\nСтартовая последовательность: ");
     for (size_t i=0;i<dataLen;i++) SerialPrintf ("%i ",data[i]);
     SerialPrintf("\n");
 
     while (count<max_count){
         iter=0;
         memcpy(startData,data,sizeof(uint8_t)*dataLen);
-        start=micros();
-        do {
+        start=millis();
+        unsigned lastMs=millis();
+        do { 
             //shuffleArray(startData,dataLen);
             int i = rand() % dataLen;
             int j = rand() % dataLen;
             uint8_t temp = startData[j];
             startData[j] = startData[i];
             startData[i] = temp;
-            //for (size_t i=0;i<dataLen;i++) SerialPrintf ("%i ",startData[i]);
-            //SerialPrintf("\n");
             iter++;
+            if ((millis()-lastMs)>500) {
+                digitalWrite(LED_BUILTIN,!((bool)digitalRead(LED_BUILTIN)));
+                lastMs=millis();
+            }
         } while (!isSorted(startData,dataLen));
-        end=micros();
+        end=millis();
+        start=millis();
         delta_us = end-start;
         if (delta_us<min_t) min_t=delta_us;
         if (delta_us>max_t) max_t=delta_us;
@@ -63,10 +67,10 @@ void setup() {
         SerialPrintf ("Отсортировано: ");
         for (size_t i=0;i<dataLen;i++) SerialPrintf ("%i ",startData[i]);
         SerialPrintf("\n");
-        SerialPrintf ("Цикл занял %llu мксек (%llu сек), %llu итераций.\n",delta_us,delta_us/1000000,iter);
+        SerialPrintf ("Цикл занял %lu мсек (%lu сек), %lu итераций.\n",delta_us,(unsigned long)(delta_us/1000),iter);
         count++;
     }
-    SerialPrintf ("%u сортировок. Время мин:%llu макс:%llu среднее:%lu Среднее количество итераций:%llu\n",max_count,min_t,max_t,avg_t,avg_iter);
+    SerialPrintf ("%u сортировок. Время мин:%lu макс:%lu среднее:%lu Среднее количество итераций:%lu\n",max_count,min_t,max_t,avg_t,avg_iter);
 
 }
 

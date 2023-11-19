@@ -34,7 +34,7 @@ void setup() {
     uint8_t startData[10];
     size_t dataLen=10;
     unsigned long start, end;
-    uint64_t delta_us,iter=0,avg_iter=0,min_t=-1,max_t=0,avg_t=0;
+    unsigned long delta_us,iter=0,avg_iter=0,min_t=-1,max_t=0,avg_t=0;
     unsigned seed=43434,count=0,max_count=10;
     Serial.begin(9600);
     srand(seed);
@@ -76,7 +76,7 @@ void setup() {
         avg_iter=(avg_iter+iter)/2;
         for (size_t i=0;i<dataLen;i++) SerialPrintf ("%i ",startData[i]);
         SerialPrintf("\n");
-        SerialPrintf ("Цикл занял %lu мсек (%lu сек), %lu итераций.\n",delta_us,(unsigned long)(delta_us/1000),iter);
+        SerialPrintf ("Цикл занял %lu мсек (%lu сек), %lu итераций.\n",delta_us,(unsigned long)(delta_us/1000L),iter);
         count++;
     }
     SerialPrintf ("%u сортировок. Время мин:%lu макс:%lu среднее:%lu Среднее количество итераций:%lu\n",max_count,min_t,max_t,avg_t,avg_iter);

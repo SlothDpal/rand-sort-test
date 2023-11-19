@@ -7,6 +7,11 @@
 #include <string.h>
 #include "serialprintf.h"
 
+// если определена (раскоментировать), 
+// то за итерацию перемешивается весь массив
+// иначе, только два случайных элемента
+//#define SHUFFLE_ARRAY
+
 bool isSorted(uint8_t * data, size_t len){
     for (size_t i=0;i<len-1;i++) if (data[i]>data[i+1]) return false;
     return true;
@@ -43,27 +48,32 @@ void setup() {
         iter=0;
         memcpy(startData,data,sizeof(uint8_t)*dataLen);
         start=millis();
-        unsigned lastMs=millis();
+        unsigned long lastMs=millis();
+        bool blLed=true;
         do { 
-            //shuffleArray(startData,dataLen);
-            int i = rand() % dataLen;
-            int j = rand() % dataLen;
-            uint8_t temp = startData[j];
-            startData[j] = startData[i];
-            startData[i] = temp;
+            #ifdef SHUFFLE_ARRAY
+                shuffleArray(startData,dataLen); 
+            #else
+                int i = rand() % dataLen;
+                int j = rand() % dataLen;
+                uint8_t temp = startData[j];
+                startData[j] = startData[i];
+                startData[i] = temp;
+            #endif
             iter++;
             if ((millis()-lastMs)>500) {
-                digitalWrite(LED_BUILTIN,!((bool)digitalRead(LED_BUILTIN)));
+                if (blLed) blLed=false; else blLed=true;
+                digitalWrite(LED_BUILTIN,blLed);
                 lastMs=millis();
             }
         } while (!isSorted(startData,dataLen));
+        SerialPrintf ("Отсортировано: ");
         end=millis();
         delta_us = end-start;
         if (delta_us<min_t) min_t=delta_us;
         if (delta_us>max_t) max_t=delta_us;
         avg_t=(avg_t+delta_us)/2;
         avg_iter=(avg_iter+iter)/2;
-        SerialPrintf ("Отсортировано: ");
         for (size_t i=0;i<dataLen;i++) SerialPrintf ("%i ",startData[i]);
         SerialPrintf("\n");
         SerialPrintf ("Цикл занял %lu мсек (%lu сек), %lu итераций.\n",delta_us,(unsigned long)(delta_us/1000),iter);

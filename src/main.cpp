@@ -36,11 +36,13 @@ void setup() {
     unsigned long start, end;
     unsigned long delta_us,iter=0,avg_iter=0,min_t=-1,max_t=0,avg_t=0;
     unsigned seed=43434,count=0,max_count=10;
-    Serial.begin(9600);
-    srand(seed);
     pinMode(LED_BUILTIN,OUTPUT);    
+    Serial.begin(9600);
+    Serial.println("");
+    SerialPrintf("Seed: %u\n",seed);
+    srand(seed);
     shuffleArray(data,dataLen);
-    SerialPrintf ("\nСтартовая последовательность: ");
+    SerialPrintf ("Стартовая последовательность: ");
     for (size_t i=0;i<dataLen;i++) SerialPrintf ("%i ",data[i]);
     SerialPrintf("\n");
 

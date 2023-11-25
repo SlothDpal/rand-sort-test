@@ -1,12 +1,15 @@
-#include <Arduino.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <time.h>
 #include <stdint.h>
 #include <string.h>
-#include "serialprintf.h"
 
+// *** компиляция для компьютера ***
+// читать /dev/random для инициализации гпсч
+#define READ_DEV_RANDOM
+
+// *** компиляция для микроконтроллеров ***
 // если определена (раскоментировать), 
 // то за итерацию перемешивается весь массив
 // иначе, только два случайных элемента
@@ -19,11 +22,6 @@
 //#define RP2040BIWS 16
 // раскоментировать если плата RP2040 с алика со встроенным ws2812
 //#define RP2040BIWS 23
-
-#ifdef RP2040BIWS
-    #include <Adafruit_NeoPixel.h>
-    Adafruit_NeoPixel builtinLed(1,RP2040BIWS,NEO_GRBW + NEO_KHZ800);
-#endif
 
 bool isSorted(uint8_t * data, size_t len){
     for (size_t i=0;i<len-1;i++) if (data[i]>data[i+1]) return false;
@@ -41,6 +39,14 @@ void shuffleArray(uint8_t * data, size_t len) {
         }
     }
 }
+
+#ifdef ARDUINO
+#include <Arduino.h>
+#include "serialprintf.h"
+#ifdef RP2040BIWS
+    #include <Adafruit_NeoPixel.h>
+    Adafruit_NeoPixel builtinLed(1,RP2040BIWS,NEO_GRBW + NEO_KHZ800);
+#endif
 
 void setup() {
     uint8_t *data=NULL;
@@ -118,6 +124,8 @@ void setup() {
         }
         if (delta_us<min_t) min_t=delta_us;
         if (delta_us>max_t) max_t=delta_us;
+        if (iter<min_iter) min_iter=iter;
+        if (iter>max_iter) max_iter=iter;
         //for (size_t i=0;i<dataLen;i++) SerialPrintf ("%i ",startData[i]);
         //SerialPrintf("\n");
         SerialPrintf ("%u: Цикл занял %lu мсек (%lu сек), %lu итераций.\n",count+1,delta_us,(unsigned long)(delta_us/1000L),iter);
@@ -136,3 +144,73 @@ void loop() {
   // put your main code here, to run repeatedly:
   delay(1000);
 }
+
+#else
+int main() {
+    uint8_t *data;
+    uint8_t *startData; 
+    size_t dataLen=10;
+    struct timespec start, end;
+    unsigned long delta_us,min_t=-1,max_t=0,avg_t=0;
+    unsigned long iter=0,min_iter=-1,max_iter=0,avg_iter=0;
+    unsigned seed=43434,count=0,max_count=10;
+    FILE *rnd;
+    
+    #ifdef READ_DEV_RANDOM
+        rnd=fopen("/dev/random","r");
+        if (rnd){
+            fread(&seed,sizeof(unsigned),1,rnd);
+            fclose(rnd);
+        }
+    #endif
+    printf("Инициализация ГПСЧ числом: %u\n", seed);
+    srand(seed);
+    
+    data=(uint8_t*)malloc(sizeof(uint8_t)*dataLen);
+    startData=(uint8_t*)malloc(sizeof(uint8_t)*dataLen);
+    for (int i=0;i<dataLen;i++) data[i]=dataLen-i-1;
+    shuffleArray(data,dataLen);
+    printf ("Стартовая последовательность: ");
+    for (int i=0;i<dataLen;i++) printf ("%i ",data[i]);
+    printf("\n");
+
+    while (count<max_count){
+        iter=0;
+        memcpy(startData,data,sizeof(uint8_t)*dataLen);
+        clock_gettime(CLOCK_MONOTONIC, &start);
+        do {
+            #ifdef SHUFFLE_ARRAY
+                shuffleArray(startData,dataLen); 
+            #else
+                int i = rand() % dataLen;
+                int j = rand() % dataLen;
+                uint8_t temp = startData[j];
+                startData[j] = startData[i];
+                startData[i] = temp;
+            #endif
+            iter++;
+        } while (!isSorted(startData,dataLen));
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        delta_us = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec)/1000;
+        if (count == 0) {
+            min_t=delta_us;
+            max_t=delta_us;
+            min_iter=iter;
+            max_iter=iter;
+        }
+        if (delta_us<min_t) min_t=delta_us;
+        if (delta_us>max_t) max_t=delta_us;
+        if (iter<min_iter) min_iter=iter;
+        if (iter>max_iter) max_iter=iter;
+        printf ("Отсортировано: ");
+        printf ("Цикл занял %lu мсек (%.3f сек), %lu итераций.\n",delta_us/1000,(float)delta_us/1000000.0,iter);
+        count++;
+    }
+    avg_t=(min_t+max_t)/2;
+    avg_iter=(min_iter+max_iter)/2;
+    printf ("%u сортировок. Время мин:%lu макс:%lu среднее:%lu Среднее количество итераций:%lu\n",max_count,min_t,max_t,avg_t,avg_iter);
+    free(data);
+    free(startData);
+    return 0;
+}
+#endif
